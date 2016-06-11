@@ -11,7 +11,7 @@
 @class SortButton;
 @class ReusedScrollView;
 
-@interface SortNavBarScrollView : UIScrollView
+@interface SortNavBarScrollView : UIView
 
 @property (nonatomic, strong) UIScrollView *itemsBarScrollView;
 @property (nonatomic, strong) ReusedScrollView *reusedScrollView;

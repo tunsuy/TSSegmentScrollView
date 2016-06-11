@@ -16,7 +16,7 @@
 #define kItemsViewToBarScrollViewPaddingLeft 10
 #define kItemsViewToBarScrollViewPaddingRight 10
 
-@interface SortNavBarScrollView ()<ReusedScrollViewDataSource, ReusedScrollViewDelegate>
+@interface SortNavBarScrollView ()<ReusedScrollViewDataSource, ReusedScrollViewDelegate, UIScrollViewDelegate>
 
 @property (nonatomic, strong) NSMutableArray *itemTitlesArr;
 @property (nonatomic, copy) NSArray *itemViewControllers;
@@ -25,6 +25,9 @@
 @property (nonatomic, assign) CGFloat itemWidth;
 @property (nonatomic, assign) CGFloat itemHeight;
 @property (nonatomic, assign) CGFloat itemSpace;
+
+@property (nonatomic, assign) CGFloat startOffsetX;
+@property (nonatomic, assign) CGFloat endOffsetX;
 
 @end
 
@@ -43,7 +46,9 @@
         
         /** 初始化itemsBarScrollView */
         self.itemsBarScrollView.ts_height = self.itemHeight + kItemsViewToBarScrollViewPaddingTop +kItemsViewToBarScrollViewPaddingBottom;
-        self.itemsBarScrollView.contentSize = CGSizeMake((self.itemWidth + itemSpace) * itemCount - itemSpace, self.itemsBarScrollView.ts_height);
+        self.itemsBarScrollView.contentSize = CGSizeMake((self.itemWidth + itemSpace) * itemCount - itemSpace + kItemsViewToBarScrollViewPaddingLeft + kItemsViewToBarScrollViewPaddingRight, self.itemsBarScrollView.ts_height);
+        self.itemsBarScrollView.showsVerticalScrollIndicator = NO;
+        self.itemsBarScrollView.showsHorizontalScrollIndicator = NO;
         [self setUpItemViewForBarScrollView:itemView itemSpace:itemSpace];
         [self addSubview:self.itemsBarScrollView];
         
@@ -52,6 +57,7 @@
         _reusedScrollView.pageViews = [self pageViewsWithItemViewControllers:itemViewControllers];
         _reusedScrollView.reusedScrollViewDataSource = self;
         _reusedScrollView.reusedScrollViewDelegate = self;
+        _reusedScrollView.delegate = self;
         [self addSubview:_reusedScrollView];
     }
     return self;
@@ -121,20 +127,30 @@
 
 #pragma mark - Button click method
 - (void)sortBtnClick:(SortButton *)button {
-    UIColor *color = [button titleColorForState:UIControlStateNormal];
-    UIFont *font = button.titleLabel.font;
+    CGFloat contentWidth = 0.0;
     for (SortButton *btn in self.itemsArr) {
         if (btn.tag == button.tag) {
             btn.titleLabel.font = [UIFont systemFontOfSize:30];
             [btn setTitleColor:[UIColor orangeColor] forState:UIControlStateNormal];
+            [btn autoWidthForTitle];
+            [self autoOriginForSortButton:btn];
+            [self autoOriginForReusedScrollViewWithSortButton:btn];
         }
         else {
-            btn.titleLabel.font = font;
-            [btn setTitleColor:color forState:UIControlStateNormal];
+            btn.titleLabel.font = [UIFont boldSystemFontOfSize:20];
+            [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+            [btn autoWidthForTitle];
+            [self autoOriginForSortButton:btn];
         }
-        [btn autoWidthForTitleFont];
-        [self autoOriginForSortButton:button];
+//        [btn autoWidthForTitle];
+//        [self autoOriginForSortButton:button];
+        
+        contentWidth += btn.ts_width + self.itemSpace;
+        
     }
+    
+    self.itemsBarScrollView.contentSize = CGSizeMake(contentWidth - self.itemSpace + kItemsViewToBarScrollViewPaddingLeft + kItemsViewToBarScrollViewPaddingRight, self.itemsBarScrollView.ts_height);
+    
     CGFloat offsetX = button.tag * self.ts_width;
     [self.reusedScrollView setContentOffset:CGPointMake(offsetX, 0) animated:YES];
 }
@@ -148,6 +164,52 @@
 //            btn.ts_originY += (maxHeight - btn.ts_height) / 2;
 //        }
     }
+}
+
+- (void)autoOriginForReusedScrollViewWithSortButton:(SortButton *)btn {
+    self.itemsBarScrollView.ts_height = btn.ts_height + kItemsViewToBarScrollViewPaddingTop +kItemsViewToBarScrollViewPaddingBottom;
+    self.reusedScrollView.ts_originY = CGRectGetMaxY(self.itemsBarScrollView.frame);
+    self.reusedScrollView.ts_height = SCREEN_HEIGHT-CGRectGetMaxY(self.itemsBarScrollView.frame);
+}
+
+#pragma mark - UIScrollViewDelegate
+//- (void)scrollViewWillEndDragging:(UIScrollView *)scrollView withVelocity:(CGPoint)velocity targetContentOffset:(inout CGPoint *)targetContentOffset {
+//    NSInteger index = targetContentOffset->x / scrollView.frame.size.width;
+//    if (index + 1 > [self.itemsArr count] -1) {
+//        return;
+//    }
+//    SortButton *btn = self.itemsArr[index+1];
+//    [self sortBtnClick:btn];
+//}
+
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+    _startOffsetX = scrollView.contentOffset.x;
+}
+
+//- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView{
+//    _endOffsetX = scrollView.contentOffset.x;
+//
+//}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+    _endOffsetX = scrollView.contentOffset.x;
+    
+    NSInteger index = _endOffsetX > 0 ? _endOffsetX / scrollView.frame.size.width : 0;
+    SortButton *btn = nil;
+    if (_startOffsetX > _endOffsetX) {
+        btn = self.itemsArr[index];
+    }
+    else {
+        if (index + 1 > [self.itemsArr count] -1) {
+            return;
+        }
+        btn = self.itemsArr[index+1];
+    }
+    
+    [self sortBtnClick:btn];
+    
+    CGFloat offsetX = btn.tag * self.ts_width;
+    [self.reusedScrollView setContentOffset:CGPointMake(offsetX, 0) animated:YES];
 }
 
 @end

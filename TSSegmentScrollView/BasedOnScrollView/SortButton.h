@@ -18,6 +18,6 @@
 - (void)itemStopWithItem;
 - (void)itemlittleScare;
 
-- (void)autoWidthForTitleFont;
+- (void)autoWidthForTitle;
 
 @end

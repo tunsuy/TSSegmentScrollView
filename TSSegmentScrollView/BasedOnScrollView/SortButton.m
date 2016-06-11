@@ -39,6 +39,7 @@
         self.titleLabel.font = [UIFont boldSystemFontOfSize:20];
         self.backgroundColor = [UIColor colorWithRed:31/255.0 green:192/255.0 blue:120/255.0 alpha:0.6];
         [self addSubview:self.deleteIcon];
+        
     }
     
     return self;
@@ -51,6 +52,11 @@
     self.deleteIcon.ts_centerX = 2;
     self.deleteIcon.ts_centerY = 2;
     self.deleteIcon.userInteractionEnabled = YES;
+    
+    /** 自适应titleLabel文字大小 */
+//    CGRect frame = self.titleLabel.frame;
+//    frame.size = [self titleLabelTitleSize];
+//    self.titleLabel.frame = frame;
 }
 
 - (void)itemlittleScare{
@@ -125,10 +131,16 @@
     return copy;
 }
 
-- (void)autoWidthForTitleFont {
+//- (CGSize)titleLabelTitleSize {
+//    NSDictionary *attributes = @{NSFontAttributeName: self.titleLabel.font};
+//    CGSize size = [self.titleLabel.text sizeWithAttributes:attributes];
+//    return size;
+//}
+
+- (void)autoWidthForTitle {
     NSDictionary *attributes = @{NSFontAttributeName: self.titleLabel.font};
-    CGSize size = [self.titleLabel.text sizeWithAttributes:attributes];
-    self.ts_size = size;
+    CGSize size = [self.titleLabel.text boundingRectWithSize:CGSizeMake(MAXFLOAT, MAXFLOAT) options:NSStringDrawingTruncatesLastVisibleLine attributes:attributes context:nil].size;
+    self.ts_size = CGSizeMake(size.width + 5, size.height + 5);
 }
 
 @end
